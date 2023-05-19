@@ -1,94 +1,79 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.8.0 <0.9.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-contract TicketMarketplace is Ownable {
-
-    using EnumerableSet for EnumerableSet.AddressSet;
+contract EventMarketplace {
     using SafeMath for uint256;
 
-    // Event struct
     struct Event {
         uint256 eventId;
+        address payable creator;
         string name;
         string description;
         uint256 ticketPrice;
         uint256 totalTickets;
-        EnumerableSet.AddressSet ticketHolders;
+        uint256 ticketsSold;
+        address[] ticketHolderAddresses;
+        mapping(address => Ticket) ticketHolders;
     }
 
-    // Ticket struct
     struct Ticket {
         uint256 ticketId;
         uint256 eventId;
-        uint256 dateAdded;
-        uint256 price;
         address owner;
     }
 
-    // State variables
-    mapping(uint256 => Event) private events;
-    mapping(uint256 => Ticket) public tickets;
-    uint256 private eventIdCounter;
-    uint256 private ticketIdCounter;
+    mapping(uint256 => Event) public events;
 
-    // Event creation
-    function createEvent(string calldata name, string calldata description, uint256 ticketPrice, uint256 totalTickets) external onlyOwner {
-        eventIdCounter = eventIdCounter.add(1);
-        Event storage newEvent = events[eventIdCounter];
-        newEvent.eventId = eventIdCounter;
-        newEvent.name = name;
-        newEvent.description = description;
-        newEvent.ticketPrice = ticketPrice;
-        newEvent.totalTickets = totalTickets;
+    uint256 public nextEventId;
+    uint256 public nextTicketId;
+
+    function createEvent(string memory _name, string memory _description, uint256 _ticketPrice, uint256 _totalTickets) public {
+        Event storage newEvent = events[nextEventId];
+        newEvent.eventId = nextEventId;
+        newEvent.creator = payable(msg.sender);
+        newEvent.name = _name;
+        newEvent.description = _description;
+        newEvent.ticketPrice = _ticketPrice;
+        newEvent.totalTickets = _totalTickets;
+        nextEventId++;
     }
 
-    // Ticket creation
-    function addTicket(uint256 eventId) external onlyOwner {
-        require(events[eventId].totalTickets > 0, "No more tickets available for this event");
+    function buyTicket(uint256 _eventId) public payable {
+        Event storage eventToBuy = events[_eventId];
+        require(msg.value == eventToBuy.ticketPrice, "Incorrect ticket price");
+        require(eventToBuy.ticketsSold < eventToBuy.totalTickets, "No more tickets left");
+        require(msg.sender != eventToBuy.creator, "You cannot buy your own event's tickets!");
 
-        ticketIdCounter = ticketIdCounter.add(1);
-        Ticket storage newTicket = tickets[ticketIdCounter];
-        newTicket.ticketId = ticketIdCounter;
-        newTicket.eventId = eventId;
-        newTicket.dateAdded = block.timestamp;
-        newTicket.price = events[eventId].ticketPrice;
-        newTicket.owner = address(0);
+        Ticket storage newTicket = eventToBuy.ticketHolders[msg.sender];
+        newTicket.ticketId = nextTicketId;
+        newTicket.eventId = _eventId;
+        newTicket.owner = msg.sender;
+        nextTicketId++;
+        
+        eventToBuy.ticketsSold++;
+        eventToBuy.ticketHolderAddresses.push(msg.sender); 
 
-        events[eventId].totalTickets = events[eventId].totalTickets.sub(1);
     }
 
-    // Ticket purchase
-    function buyTicket(uint256 ticketId) external payable {
-        require(tickets[ticketId].owner == address(0), "Ticket already sold");
-        require(msg.value == tickets[ticketId].price, "Incorrect Ether sent");
-
-        tickets[ticketId].owner = msg.sender;
-        events[tickets[ticketId].eventId].ticketHolders.add(msg.sender);
-
-        (bool success, ) = owner().call{value: msg.value}("");
-        require(success, "Transfer failed");
+    function withdrawFunds(uint256 _eventId) public {
+        Event storage eventToWithdraw = events[_eventId];
+        require(msg.sender == eventToWithdraw.creator, "Only event creator can withdraw");
+        uint256 amount = eventToWithdraw.ticketPrice.mul(eventToWithdraw.ticketsSold);
+        eventToWithdraw.creator.transfer(amount);
     }
 
-    // Returns the ticket holders of a particular event
-    function getTicketHolders(uint256 eventId) external view returns (address[] memory) {
-        uint256 length = events[eventId].ticketHolders.length();
-        address[] memory holders = new address[](length);
-
-        for (uint256 i = 0; i < length; i++) {
-            holders[i] = events[eventId].ticketHolders.at(i);
-        }
-
-        return holders;
+    function getTicketHolders(uint256 _eventId) public view returns (address[] memory) {
+        return events[_eventId].ticketHolderAddresses;
     }
 
-    // Getters for Event struct
-    function getEvent(uint256 eventId) external view returns (uint256, string memory, string memory, uint256, uint256) {
-        Event storage ev = events[eventId];
-        return (ev.eventId, ev.name, ev.description, ev.ticketPrice, ev.totalTickets);
+    function getTicketInfo(uint256 _eventId, address _ticketHolder) public view returns (uint256, uint256, address) {
+        Ticket memory ticket = events[_eventId].ticketHolders[_ticketHolder];
+        return (ticket.ticketId, ticket.eventId, ticket.owner);
+    }
+
+    function getEventInfo(uint256 _eventId) public view returns (uint256, address, string memory, string memory, uint256, uint256, uint256, address[] memory) {
+        return (events[_eventId].eventId, events[_eventId].creator, events[_eventId].name, events[_eventId].description, events[_eventId].ticketPrice, events[_eventId].totalTickets, events[_eventId].ticketsSold, events[_eventId].ticketHolderAddresses);
     }
 }
-
