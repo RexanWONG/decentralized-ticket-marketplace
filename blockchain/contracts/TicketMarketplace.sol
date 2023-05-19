@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
+// 0x359B573359DDaF99856F2F036894A5DaD30d55C4
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-contract EventMarketplace {
+contract TicketMarketplace {
     using SafeMath for uint256;
 
     struct Event {
@@ -73,7 +74,7 @@ contract EventMarketplace {
         return (ticket.ticketId, ticket.eventId, ticket.owner);
     }
 
-    function getEventInfo(uint256 _eventId) public view returns (uint256, address, string memory, string memory, uint256, uint256, uint256, address[] memory) {
-        return (events[_eventId].eventId, events[_eventId].creator, events[_eventId].name, events[_eventId].description, events[_eventId].ticketPrice, events[_eventId].totalTickets, events[_eventId].ticketsSold, events[_eventId].ticketHolderAddresses);
+    function getEventInfo(uint256 _eventId) public view returns (uint256, address, string memory, string memory, uint256, uint256, uint256) {
+        return (events[_eventId].eventId, events[_eventId].creator, events[_eventId].name, events[_eventId].description, events[_eventId].ticketPrice, events[_eventId].totalTickets, events[_eventId].ticketsSold);
     }
 }
