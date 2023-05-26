@@ -13,3 +13,31 @@ export async function connectWallet() {
 
     return account
 }
+
+export async function checkIfWalletIsConnected() {
+    if (typeof window.ethereum !== 'undefined') {
+        return false
+    } else {
+        return true
+    }
+}
+
+export async function createEvent(name, description, ticketPrice, totalTickets) {
+    try {
+        const data = await ticketMarketplaceContract.createEvent(
+            name, 
+            description,
+            ethers.utils.parseEther(ticketPrice),
+            totalTickets
+        )
+
+        await data.wait()
+        return true
+
+    } catch (error) {
+        console.error(error)
+        return false
+    }
+}
+
+

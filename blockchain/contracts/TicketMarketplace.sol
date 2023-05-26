@@ -1,5 +1,4 @@
 // SPDX-License-Identifier: MIT
-// Contract Address : 0x359B573359DDaF99856F2F036894A5DaD30d55C4
 pragma solidity >=0.8.0 <0.9.0;
 
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
@@ -12,6 +11,7 @@ contract TicketMarketplace {
         address payable creator;
         string name;
         string description;
+        string ipfsImageHash;
         uint256 ticketPrice;
         uint256 totalTickets;
         uint256 ticketsSold;
@@ -30,12 +30,17 @@ contract TicketMarketplace {
     uint256 public nextEventId;
     uint256 public nextTicketId;
 
-    function createEvent(string memory _name, string memory _description, uint256 _ticketPrice, uint256 _totalTickets) public {
+    function createEvent(string memory _name, string memory _description, string memory _ipfsImageHash, uint256 _ticketPrice, uint256 _totalTickets) public {
+        require(bytes(_name).length >= 4 && bytes(_name).length <= 50, "Event name must be between 4 and 50 characters");
+        require(_ticketPrice > 0, "Ticket price must be greater than 0");
+        require(_totalTickets > 0, "You must have at least 1 ticket in your event");
+
         Event storage newEvent = events[nextEventId];
         newEvent.eventId = nextEventId;
         newEvent.creator = payable(msg.sender);
         newEvent.name = _name;
         newEvent.description = _description;
+        newEvent.ipfsImageHash = _ipfsImageHash;
         newEvent.ticketPrice = _ticketPrice;
         newEvent.totalTickets = _totalTickets;
         nextEventId++;
@@ -55,7 +60,6 @@ contract TicketMarketplace {
         
         eventToBuy.ticketsSold++;
         eventToBuy.ticketHolderAddresses.push(msg.sender); 
-
     }
 
     function withdrawFunds(uint256 _eventId) public {
@@ -74,7 +78,23 @@ contract TicketMarketplace {
         return (ticket.ticketId, ticket.eventId, ticket.owner);
     }
 
-    function getEventInfo(uint256 _eventId) public view returns (uint256, address, string memory, string memory, uint256, uint256, uint256) {
-        return (events[_eventId].eventId, events[_eventId].creator, events[_eventId].name, events[_eventId].description, events[_eventId].ticketPrice, events[_eventId].totalTickets, events[_eventId].ticketsSold);
+    function getEventInfo(uint256 _eventId) public view returns (uint256, string memory, string memory, string memory, uint256, uint256, uint256) {
+        return (
+            events[_eventId].eventId, 
+            events[_eventId].name, 
+            events[_eventId].description, 
+            events[_eventId].ipfsImageHash, 
+            events[_eventId].ticketPrice, 
+            events[_eventId].totalTickets, 
+            events[_eventId].ticketsSold
+        );
+    }
+
+    function getEventCreator(uint256 _eventId) public view returns (address) {
+        return events[_eventId].creator;
+    }
+
+    function getNumEvents() public view returns (uint256) {
+        return nextEventId;
     }
 }
