@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "ethers": "^5.7.2",
+    "ipfs-http-client": "^60.0.1",
+    "millify": "^6.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "truncate-eth-address": "^1.0.2"

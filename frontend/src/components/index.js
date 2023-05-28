@@ -1,5 +1,7 @@
-import Navbar from "./Navbar";
+import EventList from "./EventList";
+import Loader from "./Loader"
 
 export {
-  Navbar
+  EventList,
+  Loader
 }
