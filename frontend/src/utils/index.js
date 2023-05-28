@@ -64,7 +64,7 @@ export async function getAllEvents() {
 
 export async function createEvent(name, description, imageIpfsHash, ticketPrice, totalTickets) {
     try {
-        const data = await ticketMarketplaceContract.createEvent(
+        const create = await ticketMarketplaceContract.createEvent(
             name, 
             description,
             imageIpfsHash,
@@ -72,12 +72,25 @@ export async function createEvent(name, description, imageIpfsHash, ticketPrice,
             totalTickets
         )
 
-        await data.wait()
+        await create.wait()
         return true
 
     } catch (error) {
         console.error(error)
         return false
+    }
+}
+
+export async function purchaseTicket(eventId, ticketPrice) {
+    try {
+        const purchase = await ticketMarketplaceContract.buyTicket(eventId, {value: ethers.utils.parseEther(ticketPrice)})
+
+        await purchase.wait()
+        return true
+
+    } catch (error) {
+        console.error(error)
+        return false;
     }
 }
 
