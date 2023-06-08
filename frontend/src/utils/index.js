@@ -58,7 +58,7 @@ export async function getAllEvents() {
         return allEvents;
 
     } catch (error) {
-        console.log(error);
+        console.error(error);
     }
 }
 
